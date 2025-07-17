@@ -9,10 +9,11 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>hhsc.kangnasi</groupId>
-    <artifactId>javafx-spring-boot-starter</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>javafx-spring-boot-starter</name>
-    <description>javafx-spring-boot-starter</description>
+    <artifactId>simple-javafx-webview-spring-boot-starter</artifactId>
+    <version>1.0.0</version>
+    <name>simpleJavaFxWebView-spring-boot-starter</name>
+    <description>simpleJavaFxWebView-spring-boot-starter</description>
+    <packaging>jar</packaging>
     <url/>
     <licenses>
         <license/>
@@ -57,13 +58,13 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>25-ea+18</version>
+            <version>17.0.13</version>
         </dependency>
 
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-web</artifactId>
-            <version>25-ea+18</version>
+            <version>17.0.13</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -78,6 +79,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>

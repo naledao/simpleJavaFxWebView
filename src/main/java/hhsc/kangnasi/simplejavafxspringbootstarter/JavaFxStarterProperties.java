@@ -1,12 +1,11 @@
-package hhsc.kangnasi.javafxspringbootstarter;
+package hhsc.kangnasi.simplejavafxspringbootstarter;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Data
-@Component
-@ConfigurationProperties(prefix = "hhsc.kangnasi.javafx")
+@ConfigurationProperties(prefix = "hhsc.kangnasi.simple-javafx-webview")
 public class JavaFxStarterProperties {
 
     private String springBootClassPath;

@@ -1,4 +1,4 @@
-package hhsc.kangnasi.javafxspringbootstarter;
+package hhsc.kangnasi.simplejavafxspringbootstarter;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -17,22 +17,25 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.stereotype.Component;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Optional;
 
-@Component
+@Slf4j
 public class JavaFXApplication extends Application {
-
-    @Autowired
-    private JavaFxStarterProperties javaFxStarterProperties;
-
     private Stage splashStage;
 
     private Class<?> springBootClass;
@@ -45,14 +48,25 @@ public class JavaFXApplication extends Application {
 
     private String appName;
 
+    private JavaFxStarterProperties javaFxStarterProperties;
+
+    private Image ico;
+
     @Override
     public void init() throws Exception {
         super.init();
-        springBootClass=Class.forName(javaFxStarterProperties.getSpringBootClassPath());
+        ConfigurableApplicationContext springContext=new SpringApplicationBuilder(SimpleJavaFxSpringBootStarterApplication.class)
+                .web(WebApplicationType.NONE).logStartupInfo(false)
+                .run(getParameters().getRaw().toArray(new String[0]));
+        javaFxStarterProperties = springContext.getBean(JavaFxStarterProperties.class);
         indexHtmlPath=javaFxStarterProperties.getIndexHtmlPath();
         startHtmlPath=javaFxStarterProperties.getStartHtmlPath();
         icoPath=javaFxStarterProperties.getIcoPath();
         appName=javaFxStarterProperties.getAppName();
+        log.info("indexHtmlPath："+indexHtmlPath);
+        log.info("startHtmlPath："+startHtmlPath);
+        log.info("icoPath："+icoPath);
+        log.info("appName："+appName);
     }
 
     @Override
@@ -64,7 +78,9 @@ public class JavaFXApplication extends Application {
         // 在后台线程启动 Spring Boot
         new Thread(() -> {
             try {
-                SpringApplication app = new SpringApplication(springBootClass); // 我的需求：这边我想可以根据传进来的参数来确定
+                springBootClass=Class.forName(javaFxStarterProperties.getSpringBootClassPath());
+                SpringApplication app = new SpringApplication(springBootClass);
+                app.setBannerMode(Banner.Mode.OFF);
                 // 添加监听器，当 Spring Boot 启动完成后执行
                 app.addListeners((ApplicationListener<ApplicationReadyEvent>) event -> {
                     // 在 JavaFX 线程中关闭启动窗口并显示主窗口
@@ -73,7 +89,7 @@ public class JavaFXApplication extends Application {
                         try {
                             configureMainStage(primaryStage);
                             primaryStage.show();
-                        } catch (IOException e) {
+                        } catch (IOException | URISyntaxException | InterruptedException e) {
                             throw new RuntimeException(e);
                         }
                     });
@@ -84,7 +100,11 @@ public class JavaFXApplication extends Application {
                 // 启动失败时显示错误信息
                 Platform.runLater(() -> {
                     splashStage.close();
-                    showErrorAlert("Spring Boot 启动失败: " + e.getMessage());
+                    try {
+                        showErrorAlert("Spring Boot 启动失败: " + e.getMessage());
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 });
             }
         }).start();
@@ -101,7 +121,10 @@ public class JavaFXApplication extends Application {
         WebEngine engine = webView.getEngine();
 
         try {
-            engine.load(startHtmlPath);
+            URL splash = getClass().getResource(startHtmlPath);
+            if (splash != null) {
+                engine.load(splash.toExternalForm());
+            }
         } catch (Exception e) {
             e.printStackTrace();
             webView.getEngine().loadContent(
@@ -134,17 +157,6 @@ public class JavaFXApplication extends Application {
             }
         });
 
-        // 设置图标
-        try {
-            URL iconUrl = getClass().getResource(icoPath);
-            if (iconUrl != null) {
-                Image icon = new Image(iconUrl.openStream());
-                splashStage.getIcons().add(icon);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         // 窗口位置和显示配置
         splashStage.centerOnScreen();
         splashStage.setOnShown(event -> {
@@ -156,7 +168,14 @@ public class JavaFXApplication extends Application {
     /**
      * 配置主窗口，并在运行期间实时监听分辨率 / 缩放变化，动态调整大小
      */
-    private void configureMainStage(Stage mainStage) throws IOException {
+    private void configureMainStage(Stage mainStage) throws IOException, URISyntaxException, InterruptedException {
+        // 设置主窗口图标
+        ico=new Image(icoPath,false);
+        ico.exceptionProperty().addListener((o, old, ex) -> {
+            if (ex != null) log.error("icon load fail", ex);
+        });
+        mainStage.getIcons().add(ico);
+
         WebView webView = new WebView();
         WebEngine engine = webView.getEngine();
         engine.load(indexHtmlPath);
@@ -190,13 +209,6 @@ public class JavaFXApplication extends Application {
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
 
-        // 设置主窗口图标
-        URL iconUrl = getClass().getResource(icoPath);
-        if (iconUrl != null) {
-            Image icon = new Image(iconUrl.openStream());
-            mainStage.getIcons().add(icon);
-        }
-
         // 关闭确认逻辑
         mainStage.setOnCloseRequest(event -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -205,16 +217,10 @@ public class JavaFXApplication extends Application {
 
             // 设置对话框图标
             Stage dialogStage = (Stage) alert.getDialogPane().getScene().getWindow();
-            URL dialogIconUrl = getClass().getResource(icoPath);
-            if (dialogIconUrl != null) {
-                try {
-                    dialogStage.getIcons().add(new Image(dialogIconUrl.openStream()));
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
+            dialogStage.getIcons().add(ico);
 
-            // 自定义“是的 / 取消”按钮
+
+                        // 自定义“是的 / 取消”按钮
             ButtonType yesButton = new ButtonType("是的", ButtonBar.ButtonData.YES);
             ButtonType noButton  = new ButtonType("取消", ButtonBar.ButtonData.NO);
             alert.getButtonTypes().setAll(yesButton, noButton);
@@ -242,21 +248,14 @@ public class JavaFXApplication extends Application {
     /**
      * 显示启动失败的错误对话框
      */
-    private void showErrorAlert(String message) {
+    private void showErrorAlert(String message) throws IOException {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("错误");
         alert.setHeaderText("启动失败");
         alert.setContentText(message);
         // 设置对话框图标
         Stage dialogStage = (Stage) alert.getDialogPane().getScene().getWindow();
-        URL dialogIconUrl = getClass().getResource(icoPath);
-        if (dialogIconUrl != null) {
-            try {
-                dialogStage.getIcons().add(new Image(dialogIconUrl.openStream()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        dialogStage.getIcons().add(ico);
         alert.showAndWait();
     }
 }
