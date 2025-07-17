@@ -45,7 +45,7 @@
 
 5. 点击运行，你会出现如下的标识
 
-![image-20250717143858871](C:\Users\ksdy\AppData\Roaming\Typora\typora-user-images\image-20250717143858871.png)
+![image-20250717143858871](image-20250717143858871.png)
 
 # 应用场景
 
