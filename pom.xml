@@ -10,7 +10,7 @@
     </parent>
     <groupId>hhsc.kangnasi</groupId>
     <artifactId>simple-javafx-webview-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
     <name>simpleJavaFxWebView-spring-boot-starter</name>
     <description>simpleJavaFxWebView-spring-boot-starter</description>
     <packaging>jar</packaging>
