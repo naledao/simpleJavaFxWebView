@@ -66,11 +66,19 @@
             <artifactId>javafx-web</artifactId>
             <version>17.0.13</version>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>annotationProcessor</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core</artifactId>
+            <version>6.1.6</version>
+        </dependency>
+
 
     </dependencies>
 

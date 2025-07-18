@@ -11,6 +11,8 @@ public class JavaFxStarterProperties {
     private OuterSpringBoot outerSpringBoot=new OuterSpringBoot();
 
     private App app=new App();
+
+    private System system=new System();
     @Data
     public static class OuterSpringBoot{
         private String classPath;
@@ -32,5 +34,12 @@ public class JavaFxStarterProperties {
         private double widthScale=0.8;
 
         private double heightScale=0.8;
+    }
+
+    @Data
+    public static class System{
+        private long memoryWatchDuration=60;
+
+        private double thresholdMb=600;
     }
 }

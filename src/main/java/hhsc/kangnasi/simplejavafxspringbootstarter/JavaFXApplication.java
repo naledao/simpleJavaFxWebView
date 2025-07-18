@@ -24,7 +24,14 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import oshi.software.os.OperatingSystem;
 import org.springframework.context.ConfigurableApplicationContext;
+import oshi.software.os.OSProcess;
+import oshi.SystemInfo;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,10 +43,20 @@ public class JavaFXApplication extends Application {
     private Stage splashStage;
     private JavaFxStarterProperties props;
     private Image ico;
+    private Timeline memWatchTimeline; // 内存监视定时器
+    private WebView  webView;
+    private SystemInfo systemInfo;
+    private OperatingSystem os;
+    private int pid;
+
+
 
     @Override
     public void init() throws Exception {
         super.init();
+        systemInfo=new SystemInfo();
+        os=systemInfo.getOperatingSystem();
+        pid=(int)ProcessHandle.current().pid();
         ConfigurableApplicationContext springContext=new SpringApplicationBuilder(SimpleJavaFxSpringBootStarterApplication.class)
                 .web(WebApplicationType.NONE).logStartupInfo(false)
                 .run(getParameters().getRaw().toArray(new String[0]));
@@ -98,7 +115,7 @@ public class JavaFXApplication extends Application {
         splashStage = new Stage();
 
         // 创建 WebView 加载 HTML
-        WebView webView = new WebView();
+        webView = new WebView();
         WebEngine engine = webView.getEngine();
 
         try {
@@ -150,6 +167,7 @@ public class JavaFXApplication extends Application {
      * 配置主窗口，并在运行期间实时监听分辨率 / 缩放变化，动态调整大小
      */
     private void configureMainStage(Stage mainStage) throws IOException, URISyntaxException, InterruptedException {
+        startMemoryWatchDog();
         // 设置主窗口图标
         ico=new Image(props.getApp().getIcoPath(),false);
         ico.exceptionProperty().addListener((o, old, ex) -> {
@@ -157,7 +175,6 @@ public class JavaFXApplication extends Application {
         });
         mainStage.getIcons().add(ico);
 
-        WebView webView = new WebView();
         WebEngine engine = webView.getEngine();
         engine.load(props.getApp().getIndexHtmlPath());
         BorderPane root = new BorderPane();
@@ -198,6 +215,9 @@ public class JavaFXApplication extends Application {
 
             // 设置对话框图标
             Stage dialogStage = (Stage) alert.getDialogPane().getScene().getWindow();
+            if(ico==null){
+                ico=new Image(props.getApp().getIcoPath(),false);
+            }
             dialogStage.getIcons().add(ico);
 
 
@@ -226,6 +246,28 @@ public class JavaFXApplication extends Application {
         stage.centerOnScreen();
     }
 
+    /* —— 内存监视狗 —— */
+    private void startMemoryWatchDog() {
+        if (props.getSystem().getThresholdMb() <= 0) return;
+
+        memWatchTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(props.getSystem().getMemoryWatchDuration()), e -> {
+                    OSProcess proc = os.getProcess(pid);
+                    long usedMb = proc.getResidentSetSize() / (1024 * 1024);
+                    if (usedMb > props.getSystem().getThresholdMb()) {
+                        log.warn("Process physical memory usage {}   MB, exceeds threshold {}   MB, triggers release logic", usedMb, props.getSystem().getThresholdMb());
+                        Platform.runLater(this::releaseHeavyResources);
+                    }
+                })
+        );
+        memWatchTimeline.setCycleCount(Timeline.INDEFINITE);
+        memWatchTimeline.play();
+    }
+
+    /* —— 运行期手动释放重资源 —— */
+    private void releaseHeavyResources() {
+        System.gc();       // 提示 JVM 回收 direct/native memory
+    }
     /**
      * 显示启动失败的错误对话框
      */
