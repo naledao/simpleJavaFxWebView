@@ -41,7 +41,7 @@
    ```
    
    resource目录可像下面这样，具体可自己定义
-   ![loading-ag-101](2.png)
+   <img title="" src="2.png" alt="loading-ag-101" data-align="left">
    
    4. 修改你自己的启动类，比如下面这样
    
