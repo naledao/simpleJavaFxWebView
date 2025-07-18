@@ -40,7 +40,7 @@ hhsc:
 
 ![](2.png)
 
-5. 修改你自己的启动类，比如下面这样
+5. 修改你自己的启动类并添加一个配置类`JmxConfig`，比如下面这样
 
 ```java
 @SpringBootApplication(
@@ -52,6 +52,12 @@ public class SimpleJavaFxWebViewTestApplication {
         Application.launch(JavaFXApplication.class);
     }
 }
+```
+
+```java
+@Configuration
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+public class JmxConfig {}
 ```
 
 6. 运行你的项目，会出现下面的标识
