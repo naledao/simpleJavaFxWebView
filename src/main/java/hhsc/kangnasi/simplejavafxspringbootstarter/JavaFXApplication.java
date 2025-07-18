@@ -18,7 +18,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -28,8 +27,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Optional;
@@ -47,10 +44,10 @@ public class JavaFXApplication extends Application {
                 .web(WebApplicationType.NONE).logStartupInfo(false)
                 .run(getParameters().getRaw().toArray(new String[0]));
         props = springContext.getBean(JavaFxStarterProperties.class);
-        log.info("indexHtmlPath："+props.getIndexHtmlPath());
-        log.info("startHtmlPath："+props.getStartHtmlPath());
-        log.info("icoPath："+props.getIcoPath());
-        log.info("appName："+props.getAppName());
+        log.info("indexHtmlPath："+props.getApp().getIndexHtmlPath());
+        log.info("startHtmlPath："+props.getApp().getStartHtmlPath());
+        log.info("icoPath："+props.getApp().getIcoPath());
+        log.info("appName："+props.getApp().getAppName());
     }
 
     @Override
@@ -62,7 +59,7 @@ public class JavaFXApplication extends Application {
         // 在后台线程启动 Spring Boot
         new Thread(() -> {
             try {
-                Class<?> outerSpringBootClass=Class.forName(props.getSpringBootClassPath());
+                Class<?> outerSpringBootClass=Class.forName(props.getOuterSpringBoot().getClassPath());
                 SpringApplication app = new SpringApplication(outerSpringBootClass);
                 app.setBannerMode(Banner.Mode.OFF);
                 // 添加监听器，当 Spring Boot 启动完成后执行
@@ -105,7 +102,7 @@ public class JavaFXApplication extends Application {
         WebEngine engine = webView.getEngine();
 
         try {
-            URL splash = getClass().getResource(props.getStartHtmlPath());
+            URL splash = getClass().getResource(props.getApp().getStartHtmlPath());
             if (splash != null) {
                 engine.load(splash.toExternalForm());
             }
@@ -154,7 +151,7 @@ public class JavaFXApplication extends Application {
      */
     private void configureMainStage(Stage mainStage) throws IOException, URISyntaxException, InterruptedException {
         // 设置主窗口图标
-        ico=new Image(props.getIcoPath(),false);
+        ico=new Image(props.getApp().getIcoPath(),false);
         ico.exceptionProperty().addListener((o, old, ex) -> {
             if (ex != null) log.error("icon load fail", ex);
         });
@@ -162,7 +159,7 @@ public class JavaFXApplication extends Application {
 
         WebView webView = new WebView();
         WebEngine engine = webView.getEngine();
-        engine.load(props.getIndexHtmlPath());
+        engine.load(props.getApp().getIndexHtmlPath());
         BorderPane root = new BorderPane();
         root.setCenter(webView);
 
@@ -174,11 +171,11 @@ public class JavaFXApplication extends Application {
         adjustStageSize(mainStage, lastBounds[0]);
 
         Scene scene = new Scene(root,
-                lastBounds[0].getWidth() * 0.8,
-                lastBounds[0].getHeight() * 0.8);
-        mainStage.setTitle(props.getAppName());
+                lastBounds[0].getWidth() * props.getApp().getWidthScale(),
+                lastBounds[0].getHeight() * props.getApp().getHeightScale());
+        mainStage.setTitle(props.getApp().getAppName());
         mainStage.setScene(scene);
-        mainStage.setResizable(props.isResizable());
+        mainStage.setResizable(props.getApp().isResizable());
 
         // 定时任务：每秒检查一次屏幕可见区域是否变化
         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
@@ -222,8 +219,8 @@ public class JavaFXApplication extends Application {
      * 根据给定的可视区域 bounds，按 80% 计算并调整舞台大小，最后居中窗口
      */
     private void adjustStageSize(Stage stage, Rectangle2D bounds) {
-        double newWidth  = bounds.getWidth() * 0.8;
-        double newHeight = bounds.getHeight() * 0.8;
+        double newWidth  = bounds.getWidth() * props.getApp().getWidthScale();
+        double newHeight = bounds.getHeight() * props.getApp().getHeightScale();
         stage.setWidth(newWidth);
         stage.setHeight(newHeight);
         stage.centerOnScreen();

@@ -8,15 +8,29 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "hhsc.kangnasi.simple-javafx-webview")
 public class JavaFxStarterProperties {
 
-    private String springBootClassPath;
+    private OuterSpringBoot outerSpringBoot=new OuterSpringBoot();
 
-    private String indexHtmlPath;
+    private App app=new App();
+    @Data
+    public static class OuterSpringBoot{
+        private String classPath;
+    }
 
-    private String startHtmlPath;
+    @Data
+    public static class App{
 
-    private String icoPath;
+        private String appName;
 
-    private String appName;
+        private String icoPath;
 
-    private boolean resizable=true;
+        private String startHtmlPath;
+
+        private String indexHtmlPath;
+
+        private boolean resizable=true;
+
+        private double widthScale=0.8;
+
+        private double heightScale=0.8;
+    }
 }
