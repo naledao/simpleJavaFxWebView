@@ -18,4 +18,5 @@ public class JavaFxStarterProperties {
 
     private String appName;
 
+    private boolean resizable=true;
 }

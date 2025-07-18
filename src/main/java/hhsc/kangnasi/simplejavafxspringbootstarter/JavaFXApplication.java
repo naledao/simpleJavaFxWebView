@@ -37,19 +37,7 @@ import java.util.Optional;
 @Slf4j
 public class JavaFXApplication extends Application {
     private Stage splashStage;
-
-    private Class<?> springBootClass;
-
-    private String indexHtmlPath;
-
-    private String startHtmlPath;
-
-    private String icoPath;
-
-    private String appName;
-
-    private JavaFxStarterProperties javaFxStarterProperties;
-
+    private JavaFxStarterProperties props;
     private Image ico;
 
     @Override
@@ -58,15 +46,11 @@ public class JavaFXApplication extends Application {
         ConfigurableApplicationContext springContext=new SpringApplicationBuilder(SimpleJavaFxSpringBootStarterApplication.class)
                 .web(WebApplicationType.NONE).logStartupInfo(false)
                 .run(getParameters().getRaw().toArray(new String[0]));
-        javaFxStarterProperties = springContext.getBean(JavaFxStarterProperties.class);
-        indexHtmlPath=javaFxStarterProperties.getIndexHtmlPath();
-        startHtmlPath=javaFxStarterProperties.getStartHtmlPath();
-        icoPath=javaFxStarterProperties.getIcoPath();
-        appName=javaFxStarterProperties.getAppName();
-        log.info("indexHtmlPath："+indexHtmlPath);
-        log.info("startHtmlPath："+startHtmlPath);
-        log.info("icoPath："+icoPath);
-        log.info("appName："+appName);
+        props = springContext.getBean(JavaFxStarterProperties.class);
+        log.info("indexHtmlPath："+props.getIndexHtmlPath());
+        log.info("startHtmlPath："+props.getStartHtmlPath());
+        log.info("icoPath："+props.getIcoPath());
+        log.info("appName："+props.getAppName());
     }
 
     @Override
@@ -78,8 +62,8 @@ public class JavaFXApplication extends Application {
         // 在后台线程启动 Spring Boot
         new Thread(() -> {
             try {
-                springBootClass=Class.forName(javaFxStarterProperties.getSpringBootClassPath());
-                SpringApplication app = new SpringApplication(springBootClass);
+                Class<?> outerSpringBootClass=Class.forName(props.getSpringBootClassPath());
+                SpringApplication app = new SpringApplication(outerSpringBootClass);
                 app.setBannerMode(Banner.Mode.OFF);
                 // 添加监听器，当 Spring Boot 启动完成后执行
                 app.addListeners((ApplicationListener<ApplicationReadyEvent>) event -> {
@@ -121,7 +105,7 @@ public class JavaFXApplication extends Application {
         WebEngine engine = webView.getEngine();
 
         try {
-            URL splash = getClass().getResource(startHtmlPath);
+            URL splash = getClass().getResource(props.getStartHtmlPath());
             if (splash != null) {
                 engine.load(splash.toExternalForm());
             }
@@ -170,7 +154,7 @@ public class JavaFXApplication extends Application {
      */
     private void configureMainStage(Stage mainStage) throws IOException, URISyntaxException, InterruptedException {
         // 设置主窗口图标
-        ico=new Image(icoPath,false);
+        ico=new Image(props.getIcoPath(),false);
         ico.exceptionProperty().addListener((o, old, ex) -> {
             if (ex != null) log.error("icon load fail", ex);
         });
@@ -178,7 +162,7 @@ public class JavaFXApplication extends Application {
 
         WebView webView = new WebView();
         WebEngine engine = webView.getEngine();
-        engine.load(indexHtmlPath);
+        engine.load(props.getIndexHtmlPath());
         BorderPane root = new BorderPane();
         root.setCenter(webView);
 
@@ -192,9 +176,9 @@ public class JavaFXApplication extends Application {
         Scene scene = new Scene(root,
                 lastBounds[0].getWidth() * 0.8,
                 lastBounds[0].getHeight() * 0.8);
-        mainStage.setTitle(appName);
+        mainStage.setTitle(props.getAppName());
         mainStage.setScene(scene);
-        mainStage.setResizable(false);
+        mainStage.setResizable(props.isResizable());
 
         // 定时任务：每秒检查一次屏幕可见区域是否变化
         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
