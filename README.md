@@ -4,7 +4,7 @@
 
 # 使用教程
 
-1. 下载此[maven包](https://github.com/naledao/simpleJavaFxWebView/releases/download/1.0.0/hhsc.zip)，解压，保存至自己的本地maven仓库
+1. 下载此[maven包](https://github.com/naledao/simpleJavaFxWebView/releases/download/1.0.1/hhsc.zip)，解压，保存至自己的本地maven仓库
 
 2. 在pom文件中导入依赖
 
