@@ -32,7 +32,7 @@ hhsc:
         height-scale: 0.6 #窗口默认长度比例（与运行机器显示器长度的比例），默认0.8
 
       system:
-        memory-watch-duration: 30 #内存监控间隔，单位秒
+        memory-watch-duration: 30 #内存监控间隔，单位秒，默认60秒
         threshold-mb: 230 # 内存阈值，超过阈值会释放相关内存，默认值600
 ```
 
